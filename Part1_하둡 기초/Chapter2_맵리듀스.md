@@ -8,8 +8,11 @@
 # 2.3 하둡으로 데이터 분석하기
 ## 2.3.1 맵과 리듀스
 * 맵
-    * 원본 데이터
-    * 데이터 셋의 각 행의 타입을 텍스트로 인식하는 텍스트 입력 포맷 선택
+  * 입력: 키-값 
+  * 출력: 연도와 기온
+* 리듀스
+  * 입력: 키(연도)-값(기온 리스트)
+  * 출력: 키(연도)-값(max)
 ## 2.3.2 자바 맵리듀스
 ### mapper
 * 제네릭 타입
@@ -154,9 +157,29 @@ public class MaxTemperature {
 ```
 </details>
 
+### hadoop 설치
+* JAVA 설치
+  * bash_profile
+  ```
+  JAVA_HOME=/Library/Java/JavaVirtualMachines/adoptopenjdk-11.jdk/Contents/Home
+  PATH=$PATH:$JAVA_HOME/bin
+  export JAVA_HOME
+  export PATH
+  ```
+* mvn 설치
+  * bash_profile
+  ```
+  M3_HOME=/Library/apache-maven-3.9.2
+  PATH=$PATH:$M3_HOME/bin
+  export M3_HOME
+  export PATH
+  ```
+* hadoop 설치
+  * 참조 https://key4920.github.io/docs/bigdata_platform/Hadoop/hadoop_install_M1/
+
 ### 테스트 수행
 * 독립 모드로 하둡 설치(부록A 참조)
-    * 독립모드: 로컬 파일 시스템과 로컬 잡 수행자로 맵리듀스 잡 실행
+  * 독립모드: 로컬 파일 시스템과 로컬 잡 수행자로 맵리듀스 잡 실행
 * 웹 사이트 예제 설치하고 컴파일
 ```
 export HADOOP_CLASSPATH=hadoop-examples.jar
@@ -164,3 +187,8 @@ hadoop MasTemperature input/ncdc/sample.txt output
 ```
 
 # 2.4 분산형으로 확장하기
+## 2.4.1 데이터 흐름
+* 맵리듀스 job
+  * 클라이언트가 수행하는 작업의 기본 단위
+  * 
+
