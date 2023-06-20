@@ -190,5 +190,102 @@ hadoop MasTemperature input/ncdc/sample.txt output
 ## 2.4.1 데이터 흐름
 * 맵리듀스 job
   * 클라이언트가 수행하는 작업의 기본 단위
-  * 
+  * 입력 데이터, 맵리듀스 프로그램, 설정 정보로 구성
+* YARN
+  * task scheduling
+* 하둡의 job 실행 방법
+  * map task, reduce task로 나누어 실행
+    * map task
+      * input split 또는 split이라고 부르는 고정 크기 조각으로 분리
+        * split 크기는 일반적으로 HDFS 블록의 기본 크기인 128MB가 적당
+      * 각 split마다 하나의 map task를 생성하여 split의 각 레코드를 사용자 정의 map 함수로 처리
+      * map task의 결과는 로컬 디스크에 저장(map 결과는 중간 결과물. job이 완료되면 버려짐)
+    * reduce task
+      * 모든 map task는 하나의 reduce task에 연결
+      * 정렬된 map의 모든 결과는 reduce task가 실행중인 노드로 전송
 
+## 2.4.2 컴바이너 함수
+* combiner function
+  * map task와 reduce task 사이 데이터 전송 최소화 목적
+  * combiner function의 출력 = reduce function의 입력
+  * 제한적 사용
+    * reduce function을 완전히 대체할 수 없음
+      * ex. min 은 되는데 mean 은 안됨
+### 컴바이너 함수 작성하기
+* reduce 클래스 사용하여 정의
+* job 설정에 컴바이너 클래스 추가 지정 필요
+<summary>MaxTemperatureWithCombiner.java</summary>
+
+```java
+
+// vv MaxTemperatureWithCombiner
+public class MaxTemperatureWithCombiner {
+
+  public static void main(String[] args) throws Exception {
+    if (args.length != 2) {
+      System.err.println("Usage: MaxTemperatureWithCombiner <input path> " +
+          "<output path>");
+      System.exit(-1);
+    }
+    
+    Job job = new Job();
+    job.setJarByClass(MaxTemperatureWithCombiner.class);
+    job.setJobName("Max temperature");
+
+    FileInputFormat.addInputPath(job, new Path(args[0]));
+    FileOutputFormat.setOutputPath(job, new Path(args[1]));
+    
+    job.setMapperClass(MaxTemperatureMapper.class);
+    /*[*/job.setCombinerClass(MaxTemperatureReducer.class)/*]*/;
+    job.setReducerClass(MaxTemperatureReducer.class);
+
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(IntWritable.class);
+    
+    System.exit(job.waitForCompletion(true) ? 0 : 1);
+  }
+}
+// ^^ MaxTemperatureWithCombiner
+
+```
+</details>
+
+## 2.4.3 분산 맵리듀스 잡 실행하기
+
+# 2.5 하둡 스트리밍
+* 하둡은 java외에도 다른 언어로 맵과 리듀스 함수 작성할 수 있는 map reduce API 제공
+## 2.5.1 루비
+
+## 2.5.2 파이썬
+* max_temperature_map.py
+```python
+#!/usr/bin/env python
+
+import re
+import sys
+
+for line in sys.stdin:
+  val = line.strip()
+  (year, temp, q) = (val[15:19], val[87:92], val[92:93])
+  if (temp != "+9999" and re.match("[01459]", q)):
+    print "%s\t%s" % (year, temp)
+
+```
+* max_temperature_reduce.py
+```python
+#!/usr/bin/env python
+
+import sys
+
+(last_key, max_val) = (None, -sys.maxint)
+for line in sys.stdin:
+  (key, val) = line.strip().split("\t")
+  if last_key and last_key != key:
+    print "%s\t%s" % (last_key, max_val)
+    (last_key, max_val) = (key, int(val))
+  else:
+    (last_key, max_val) = (key, max(max_val, int(val)))
+
+if last_key:
+  print "%s\t%s" % (last_key, max_val)
+```
